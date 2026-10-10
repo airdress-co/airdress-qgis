@@ -1,0 +1,27 @@
+name: ci
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 scripts/check-qt-imports.py
+  test:
+    # One source, both Qt majors: the 3.x LTR (Qt5) and the 4.x LTR (Qt6).
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ["qgis/qgis:release-3_44", "qgis/qgis:release-4_2"]
+    runs-on: ubuntu-24.04
+    container: ${{ matrix.image }}
+    env:
+      QT_QPA_PLATFORM: offscreen
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 -m pip install --break-system-packages pytest || python3 -m pip install pytest
+      - run: python3 -m pytest -q tests
