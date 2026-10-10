@@ -1,8 +1,11 @@
 # Airdress for QGIS
 
 The [Airdress map](https://maps.airdress.co) in QGIS: a styled vector
-basemap, county and city boundaries, and search — signed in with your
-Airdress account, with no API key in any project file.
+basemap, county and city boundaries, and place search. You sign in with your
+Airdress account, and no API key goes into any project file.
+
+Coverage is detailed in Europe and North America and an overview elsewhere.
+You need an Airdress account with map access.
 
 - **Sign in** opens your browser. Where the browser cannot reach QGIS (a
   remote desktop, a locked-down machine), use the code shown instead.
@@ -15,8 +18,7 @@ Airdress account, with no API key in any project file.
   *Airdress → Add attribution to layout*. Credits and licences:
   <https://maps.airdress.co/licenses>.
 
-Coverage is detailed in Europe and North America and an overview
-elsewhere. Needs QGIS 3.40 or newer, including QGIS 4.
+Needs QGIS 3.40 or newer, including QGIS 4.
 
 ## Privacy
 
