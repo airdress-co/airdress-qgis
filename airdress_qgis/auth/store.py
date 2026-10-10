@@ -7,8 +7,6 @@ this run only. There is no plaintext fallback, deliberately.
 
 from __future__ import annotations
 
-from typing import Optional
-
 from qgis.core import QgsApplication
 
 from .. import config
@@ -22,7 +20,7 @@ class AuthDbStore(Store):
     def _manager(self):
         return QgsApplication.authManager()
 
-    def load(self) -> Optional[str]:
+    def load(self) -> str | None:
         manager = self._manager()
         # existsAuthSetting needs no master password: nobody who never signed
         # in is ever asked for one.

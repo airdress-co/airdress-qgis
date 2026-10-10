@@ -2,13 +2,14 @@
 
 import glob
 import os
+import pathlib
 import zipfile
 
 import pytest
 
 pytest.importorskip("qgis.core")
 
-from .test_style import STYLE  # noqa: E402
+from .test_style import STYLE
 
 SECRET = "maps-SECRET-TOKEN-1234567890"
 
@@ -33,7 +34,7 @@ def current():
 def test_basemap_converts_and_carries_no_credential(qgis_app, current):
     from airdress_qgis.maps import layers
 
-    layer, warnings = layers.basemap(current("s1"), STYLE, lambda url: (404, b""))
+    layer, _warnings = layers.basemap(current("s1"), STYLE, lambda url: (404, b""))
     assert layer.isValid()
     assert layer.renderer() is not None
     assert "s1" in layer.source()
@@ -112,11 +113,11 @@ def test_saved_project_reopens_on_the_current_snapshot_and_holds_no_token(qgis_a
     assert all("s1" not in l.source() for l in found if layers.kind_of(l) == "basemap")
     assert repoint(found, current("s2")) == 0
     # Re-pointing kept the converted style.
-    assert [l for l in found if layers.kind_of(l) == "basemap"][0].renderer() is not None
+    assert next(l for l in found if layers.kind_of(l) == "basemap").renderer() is not None
 
     QgsSettings().sync()
     for ini in glob.glob(os.path.join(os.environ["QGIS_CUSTOM_CONFIG_PATH"], "**", "*.ini"), recursive=True):
-        assert SECRET not in open(ini, encoding="utf-8", errors="replace").read(), ini
+        assert SECRET not in pathlib.Path(ini).read_text(encoding="utf-8", errors="replace"), ini
     assert not any(SECRET in m for m in logged)
     project.clear()
 

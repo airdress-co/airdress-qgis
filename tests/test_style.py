@@ -8,7 +8,11 @@ STYLE = {
     "glyphs": "/static/fonts/{fontstack}/{range}.pbf",
     "sprite": "/static/sprites/v4/light",
     "sources": {
-        "protomaps": {"type": "vector", "url": "pmtiles:///basemap/s1/x.pmtiles", "attribution": '<a href="x">© OpenStreetMap</a>'},
+        "protomaps": {
+            "type": "vector",
+            "url": "pmtiles:///basemap/s1/x.pmtiles",
+            "attribution": '<a href="x">© OpenStreetMap</a>',
+        },
         "terrain": {"type": "raster-dem", "url": "pmtiles:///terrain/t.pmtiles"},
     },
     "layers": [
@@ -38,7 +42,11 @@ def test_source_attribution_is_plain_text():
 
 def test_current_json_gives_absolute_urls_and_refuses_foreign_hosts():
     c = current.parse(
-        {"style": "/static/styles/s1/a.json", "snapshot": "s1", "tiles": {"basemap": "/tiles/basemap/s1/{z}/{x}/{y}.mvt"}},
+        {
+            "style": "/static/styles/s1/a.json",
+            "snapshot": "s1",
+            "tiles": {"basemap": "/tiles/basemap/s1/{z}/{x}/{y}.mvt"},
+        },
         "https://maps.airdress.co",
     )
     assert c.template("basemap") == T and c.template("boundaries") is None

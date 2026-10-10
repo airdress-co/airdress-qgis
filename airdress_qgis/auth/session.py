@@ -13,15 +13,15 @@ from __future__ import annotations
 
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable, Optional
 
 from .. import config
 from .credentials import Credentials
 from .oauth import AuthorizationServer, NetworkError, OAuthError, Tokens
 
 # get/post with a bearer: (url, body-or-None, headers) -> (status, json-or-None)
-Call = Callable[[str, Optional[dict], dict], "tuple[int, Optional[dict]]"]
+Call = Callable[[str, dict | None, dict], "tuple[int, dict | None]"]
 
 
 class SignedOut(Exception):
@@ -31,7 +31,7 @@ class SignedOut(Exception):
 class Store:
     """Where the refresh token lives between QGIS runs."""
 
-    def load(self) -> Optional[str]:  # pragma: no cover - interface
+    def load(self) -> str | None:  # pragma: no cover - interface
         raise NotImplementedError
 
     def save(self, refresh_token: str) -> bool:  # pragma: no cover - interface
@@ -44,9 +44,9 @@ class Store:
 
 class MemoryStore(Store):
     def __init__(self) -> None:
-        self.value: Optional[str] = None
+        self.value: str | None = None
 
-    def load(self) -> Optional[str]:
+    def load(self) -> str | None:
         return self.value
 
     def save(self, refresh_token: str) -> bool:
@@ -78,9 +78,9 @@ class Session:
         self._credentials = credentials
         self._clock = clock
         self._lock = threading.RLock()
-        self._refresh: Optional[str] = None
-        self._access: Optional[_Held] = None
-        self._maps: Optional[_Held] = None
+        self._refresh: str | None = None
+        self._access: _Held | None = None
+        self._maps: _Held | None = None
         self.persisted = False
         self._restored = False
 
@@ -112,7 +112,7 @@ class Session:
             self._maps = None
             self._take_refresh(tokens.refresh_token)
 
-    def _take_refresh(self, refresh_token: Optional[str]) -> None:
+    def _take_refresh(self, refresh_token: str | None) -> None:
         if refresh_token is None:
             return
         self._refresh = refresh_token
@@ -120,7 +120,7 @@ class Session:
 
     # --- tokens ---------------------------------------------------------------
 
-    def _fresh(self, held: Optional[_Held]) -> bool:
+    def _fresh(self, held: _Held | None) -> bool:
         return held is not None and held.expires_at - self._clock() > config.RENEW_MARGIN_SECONDS
 
     def access_token(self) -> str:
@@ -142,7 +142,7 @@ class Session:
             self._take_refresh(tokens.refresh_token)
             return self._access.token
 
-    def ensure_fresh(self) -> Optional[float]:
+    def ensure_fresh(self) -> float | None:
         """Make sure a maps token with life left is in Credentials. Returns
         when to call again (epoch seconds), or None when signed out.
         NetworkError propagates: the caller retries later, the session stays."""
@@ -173,12 +173,12 @@ class Session:
 
     # --- sign-out ---------------------------------------------------------
 
-    def sign_out(self) -> Optional[Exception]:
+    def sign_out(self) -> Exception | None:
         """Revoke the grant at the hub, then forget everything locally. The
         local half always happens; a failed revoke is returned, not raised."""
         with self._lock:
             self._restore()
-            failure: Optional[Exception] = None
+            failure: Exception | None = None
             if self._refresh is not None:
                 try:
                     self._server.revoke(self._refresh)
@@ -200,19 +200,19 @@ class Session:
 
 
 class MintRefused(Exception):
-    def __init__(self, status: int, code: Optional[str]):
+    def __init__(self, status: int, code: str | None):
         super().__init__(f"maps token refused (HTTP {status}, {code})")
         self.status = status
         self.code = code
 
 
-def _seconds_until(rfc3339: Optional[str], now: float, default: int) -> float:
+def _seconds_until(rfc3339: str | None, now: float, default: int) -> float:
     if not rfc3339:
         return default
     from datetime import datetime
 
     try:
-        when = datetime.fromisoformat(rfc3339.replace("Z", "+00:00")).timestamp()
+        when = datetime.fromisoformat(rfc3339).timestamp()
     except ValueError:
         return default
     return max(0.0, min(float(default), when - now))

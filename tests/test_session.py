@@ -31,7 +31,7 @@ def test_maps_token_lands_in_credentials_for_the_maps_host_only():
 
 
 def test_maps_token_reused_until_margin_then_reminted():
-    session, hub, creds, clock = signed_in()
+    session, _hub, creds, clock = signed_in()
     session.ensure_fresh()
     first = creds.for_url(config.MAPS_ORIGIN + "/")
     clock.now += 900 - config.RENEW_MARGIN_SECONDS - 1
@@ -85,7 +85,6 @@ def test_restore_is_lazy_and_reads_the_store_once():
 
         def load(self):
             CountingStore.loads += 1
-            return None
 
         def save(self, value):
             return False

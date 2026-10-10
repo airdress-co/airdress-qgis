@@ -6,7 +6,7 @@ pytest.importorskip("qgis.core")
 
 
 def test_init_and_unload_leave_nothing_behind(qgis_app):
-    from qgis.core import QgsApplication, QgsNetworkAccessManager
+    from qgis.core import QgsApplication
     from qgis.testing.mocked import get_iface
 
     import airdress_qgis

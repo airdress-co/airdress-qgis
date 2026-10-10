@@ -60,8 +60,11 @@ class AirdressLocatorFilter(QgsLocatorFilter):
             self.plugin.report_answer(status, answer)
             return
         for hit in geocode.hits(answer):
-            result = QgsLocatorResult(self, hit.name, {"name": hit.name, "address": hit.address,
-                                                       "lon": hit.lon, "lat": hit.lat, "layer": hit.layer})
+            result = QgsLocatorResult(
+                self,
+                hit.name,
+                {"name": hit.name, "address": hit.address, "lon": hit.lon, "lat": hit.lat, "layer": hit.layer},
+            )
             result.description = " — ".join(p for p in (hit.address, hit.credit) if p)
             result.actions = [QgsLocatorResult.ResultAction(ADD_TO_SCRATCH, "Add to scratch layer")]
             self.resultFetched.emit(result)

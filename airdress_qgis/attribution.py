@@ -24,10 +24,10 @@ BOUNDARIES = ["Boundaries: Overture Maps Foundation, © OpenStreetMap"]
 BY_KIND = {"basemap": BASEMAP, "boundaries": BOUNDARIES}
 
 
-def line(kinds: "list[str]") -> str:
+def line(kinds: list[str]) -> str:
     """One attribution line for the layers in `kinds`, de-duplicated, in a
     stable order, ending with where the licences are."""
-    parts: "list[str]" = []
+    parts: list[str] = []
     for kind in ("basemap", "boundaries"):
         if kind in kinds:
             for item in BY_KIND[kind]:

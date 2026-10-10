@@ -1,3 +1,4 @@
+import urllib.error
 import urllib.request
 
 from airdress_qgis.auth.loopback import LoopbackReceiver
@@ -9,8 +10,8 @@ def test_receives_one_callback_and_ignores_other_paths():
     base = r.redirect_uri.rsplit("/", 1)[0]
     try:
         urllib.request.urlopen(base + "/favicon.ico", timeout=5)
-    except Exception:
-        pass
+    except urllib.error.HTTPError as err:
+        assert err.code == 404  # anything but /callback is refused
     assert not r.done()
     with urllib.request.urlopen(r.redirect_uri + "?code=abc&state=s", timeout=5) as resp:
         assert b"return to QGIS" in resp.read()

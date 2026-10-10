@@ -14,12 +14,12 @@ import base64
 import hashlib
 import secrets
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable, Optional
 from urllib.parse import urlencode
 
 # post(url, form: dict, headers: dict) -> (status, json-or-None)
-Post = Callable[[str, dict, dict], "tuple[int, Optional[dict]]"]
+Post = Callable[[str, dict, dict], "tuple[int, dict | None]"]
 
 
 class OAuthError(Exception):
@@ -38,7 +38,7 @@ class NetworkError(Exception):
 class Tokens:
     access_token: str
     expires_at: float
-    refresh_token: Optional[str]
+    refresh_token: str | None
 
 
 @dataclass
@@ -46,12 +46,12 @@ class DeviceStart:
     device_code: str
     user_code: str
     verification_uri: str
-    verification_uri_complete: Optional[str]
+    verification_uri_complete: str | None
     expires_at: float
     interval: int
 
 
-def pkce_pair() -> "tuple[str, str]":
+def pkce_pair() -> tuple[str, str]:
     """A (verifier, S256 challenge) pair, per RFC 7636."""
     verifier = secrets.token_urlsafe(48)
     digest = hashlib.sha256(verifier.encode("ascii")).digest()
@@ -116,7 +116,7 @@ class AuthorizationServer:
             interval=max(1, int(body.get("interval", 5))),
         )
 
-    def poll_device(self, device_code: str) -> Optional[Tokens]:
+    def poll_device(self, device_code: str) -> Tokens | None:
         """Tokens once approved; None while pending. `slow_down` and every
         other refusal raise OAuthError, so the caller can widen its interval
         or stop."""
@@ -157,11 +157,11 @@ class AuthorizationServer:
             refresh_token=body.get("refresh_token"),
         )
 
-    def _call(self, path: str, form: dict) -> "tuple[int, Optional[dict]]":
+    def _call(self, path: str, form: dict) -> tuple[int, dict | None]:
         return self._post(self.endpoint(path), form, {})
 
 
-def _error(body: Optional[dict], status: int) -> Exception:
+def _error(body: dict | None, status: int) -> Exception:
     if isinstance(body, dict) and isinstance(body.get("error"), str):
         return OAuthError(body["error"], str(body.get("error_description", "")))
     return NetworkError(f"unexpected answer (HTTP {status})")

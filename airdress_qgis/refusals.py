@@ -46,7 +46,7 @@ def sentence(code: str, locale: str = "en", **values) -> str:
     return text.format(**values) if values else text
 
 
-def code_for(status: int, error: "str | None") -> str:
+def code_for(status: int, error: str | None) -> str:
     """Map an HTTP answer from our hosts to a refusal code."""
     if error in MESSAGES["en"]:
         return error

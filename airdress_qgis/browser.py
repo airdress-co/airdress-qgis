@@ -3,15 +3,19 @@
 from __future__ import annotations
 
 from qgis.core import Qgis, QgsDataCollectionItem, QgsDataItem, QgsDataItemProvider
-from qgis.PyQt.QtGui import QIcon
 
 from .maps.layers import NAMES
 
 
 class _Leaf(QgsDataItem):
     def __init__(self, parent, plugin, kind: str):
-        super().__init__(Qgis.BrowserItemType.Custom, parent, NAMES[kind].replace("Airdress ", "").capitalize(),
-                         "airdress:/" + kind, "airdress")
+        super().__init__(
+            Qgis.BrowserItemType.Custom,
+            parent,
+            NAMES[kind].replace("Airdress ", "").capitalize(),
+            "airdress:/" + kind,
+            "airdress",
+        )
         self.plugin = plugin
         self.kind = kind
         self.setState(Qgis.BrowserItemState.Populated)
