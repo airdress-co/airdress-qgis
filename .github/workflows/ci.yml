@@ -5,23 +5,50 @@ on:
     branches: [main]
 permissions:
   contents: read
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
+  # Every hook in .pre-commit-config.yaml: ruff, the Qt-import rule, the
+  # public-repository rules, gitleaks, actionlint. The required check.
   checks:
+    timeout-minutes: 10
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - run: python3 scripts/check-qt-imports.py
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+        with:
+          python-version: "3.13"
+      - run: uvx prek run --all-files --show-diff-on-failure
+  # release-please reads the history to choose the next version and write the
+  # changelog, so every commit a PR brings must be a conventional commit; PRs
+  # are rebased, so those commits are what lands on main.
+  conventional-commits:
+    name: Conventional commits
+    if: github.event_name == 'pull_request'
+    timeout-minutes: 10
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+      - env:
+          TITLE: ${{ github.event.pull_request.title }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: scripts/conventional-commits.sh
   test:
     # One source, both Qt majors: the 3.x LTR (Qt5) and the 4.x LTR (Qt6).
     strategy:
       fail-fast: false
       matrix:
         image: ["qgis/qgis:3.44", "qgis/qgis:4.2"]
+    timeout-minutes: 15
     runs-on: ubuntu-24.04
     container: ${{ matrix.image }}
     env:
       QT_QPA_PLATFORM: offscreen
     steps:
-      - uses: actions/checkout@v4
-      - run: python3 -m pip install --break-system-packages pytest || python3 -m pip install pytest
-      - run: python3 -m pytest -q tests
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - run: python3 -m pytest -q -p no:cacheprovider tests

@@ -1,0 +1,37 @@
+# Builds the plugin zip for a `vX.Y.Z` tag and publishes the GitHub release
+# with it attached. release-please makes the tag and a draft release when its
+# PR is merged; a tag pushed by hand gets a new release instead.
+#
+# plugins.qgis.org is not uploaded to from here: its sign-in is the owner's
+# GitHub account (OAuth), which CI does not hold. The zip attached to the
+# release is the one to upload, byte for byte (scripts/build-zip.sh is
+# reproducible from the tag).
+name: Release
+on:
+  push:
+    tags: ["v*"]
+permissions:
+  contents: write
+jobs:
+  release:
+    name: Release
+    timeout-minutes: 10
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+      - name: Build the plugin zip (refuses a tag that is not metadata.txt's version)
+        run: scripts/build-zip.sh "$GITHUB_REF_NAME" | tee "$RUNNER_TEMP/sha256"
+      - name: Publish the release with the zip
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          zip="dist/airdress_qgis-${GITHUB_REF_NAME#v}.zip"
+          draft=$(gh release view "$GITHUB_REF_NAME" --json isDraft --jq .isDraft || true)
+          if [ -z "$draft" ]; then
+            gh release create "$GITHUB_REF_NAME" --verify-tag --generate-notes --draft
+          fi
+          gh release upload "$GITHUB_REF_NAME" "$zip" --clobber
+          gh release edit "$GITHUB_REF_NAME" --draft=false --latest
+          { echo "Upload to plugins.qgis.org:"; cat "$RUNNER_TEMP/sha256"; } >>"$GITHUB_STEP_SUMMARY"
