@@ -46,6 +46,13 @@ def source_uri(template: str, kind: str) -> str:
     return bytes(uri.encodedUri()).decode("utf-8")
 
 
+def template_of(source: str) -> str:
+    """The XYZ template a vector tile source names, decoded."""
+    uri = QgsDataSourceUri()
+    uri.setEncodedUri(source)
+    return uri.param("url")
+
+
 def kind_of(layer) -> str | None:
     value = layer.customProperty(config.LAYER_PROPERTY)
     return str(value) if value in NAMES else None

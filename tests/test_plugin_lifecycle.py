@@ -18,13 +18,13 @@ def test_init_and_unload_leave_nothing_behind(qgis_app):
     plugin = airdress_qgis.classFactory(iface)
     plugin.initGui()
     assert "Airdress" in [p.name() for p in QgsApplication.dataItemProviderRegistry().providers()]
-    assert plugin.attacher._id is not None and plugin.watcher._id is not None
+    assert plugin.attacher._id is not None
     iface.registerLocatorFilter.assert_called_once()
     # Loading touched neither the network nor the auth database.
     assert plugin.session._restored is False
 
     plugin.unload()
     assert [p.name() for p in QgsApplication.dataItemProviderRegistry().providers()] == providers_before
-    assert plugin.attacher._id is None and plugin.watcher._id is None
+    assert plugin.attacher._id is None
     assert len(QgsApplication.processingRegistry().providers()) == processing_before
     assert plugin.credentials.hosts() == []

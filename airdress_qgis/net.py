@@ -5,18 +5,22 @@
 * `Attacher` — the one request preprocessor: it adds the bearer for the
   exact hosts `Credentials` holds, and never overwrites a header someone else
   set. It covers QGIS's own credential-less style and sprite fetches too.
-* `Watcher` — a reply preprocessor that reports refusals from our hosts to
-  the main thread. It reads the status only, never a body.
+* `Notifier` — carries an answer to be shown from whatever thread produced
+  it to the main thread, where the GUI may be touched.
+
+There is deliberately no reply preprocessor: a Python callback on every
+reply QGIS's network threads make was fragile, and renewal on a timer
+keeps the token fresh without one.
 """
 
 from __future__ import annotations
 
 import json
-from urllib.parse import urlencode, urlsplit
+from urllib.parse import urlencode
 
 from qgis.core import QgsBlockingNetworkRequest, QgsNetworkAccessManager
 from qgis.PyQt.QtCore import QBuffer, QByteArray, QIODevice, QObject, QUrl, pyqtSignal
-from qgis.PyQt.QtNetwork import QNetworkReply, QNetworkRequest
+from qgis.PyQt.QtNetwork import QNetworkRequest
 
 from .auth.credentials import Credentials
 
@@ -103,34 +107,8 @@ class Attacher:
             self._id = None
 
 
-class Watcher(QObject):
-    """Emits `refused(status, host)` on the main thread for 403/429/503 from
-    the hosts it watches."""
+class Notifier(QObject):
+    """Lives on the main thread. `answer` emitted from any thread is
+    delivered there (a queued connection), so the slot may touch widgets."""
 
-    refused = pyqtSignal(int, str)
-
-    def __init__(self, hosts: set[str]):
-        super().__init__()
-        self.hosts = {h.lower() for h in hosts}
-        self._id: str | None = None
-
-    def __call__(self, request: QNetworkRequest, reply: QNetworkReply) -> None:
-        host = (urlsplit(request.url().toString()).hostname or "").lower()
-        if host not in self.hosts:
-            return
-
-        def finished() -> None:
-            status = reply.attribute(_STATUS)
-            if status is not None and int(status) in (403, 429, 503):
-                self.refused.emit(int(status), host)
-
-        reply.finished.connect(finished)
-
-    def install(self) -> None:
-        if self._id is None:
-            self._id = QgsNetworkAccessManager.setReplyPreprocessor(self)
-
-    def remove(self) -> None:
-        if self._id is not None:
-            QgsNetworkAccessManager.removeReplyPreprocessor(self._id)
-            self._id = None
+    answer = pyqtSignal(int, str)

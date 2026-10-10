@@ -8,6 +8,7 @@ preprocessor only ever reads what the timer left behind.
 
 from __future__ import annotations
 
+import json
 import os
 import time
 
@@ -25,7 +26,7 @@ from qgis.core import (
     QgsVectorLayer,
 )
 from qgis.gui import QgsMapToolEmitPoint, QgsVertexMarker
-from qgis.PyQt.QtCore import QTimer, QUrl
+from qgis.PyQt.QtCore import QCoreApplication, QThread, QTimer, QUrl
 from qgis.PyQt.QtGui import QColor, QDesktopServices, QFont, QIcon
 from qgis.PyQt.QtWidgets import QMenu, QToolButton
 
@@ -73,7 +74,8 @@ class AirdressPlugin:
         self.server = AuthorizationServer(config.HUB_ISSUER, config.CLIENT_ID, net.post_form)
         self.session = Session(self.server, net.post_form, AuthDbStore(), self.credentials)
         self.attacher = net.Attacher(self.credentials)
-        self.watcher = net.Watcher({config.MAPS_ORIGIN.split("://", 1)[1]})
+        self.notice = net.Notifier()
+        self.notice.answer.connect(self._on_answer)
         self.timer = QTimer()
         self.timer.setSingleShot(True)
         self.timer.timeout.connect(self.renew)
@@ -85,8 +87,6 @@ class AirdressPlugin:
 
     def initGui(self) -> None:
         self.attacher.install()
-        self.watcher.install()
-        self.watcher.refused.connect(self.on_refused)
 
         menu = QMenu("Airdress")
         self.sign_in_action = self._action(menu, "Sign in…", self.sign_in)
@@ -133,7 +133,6 @@ class AirdressPlugin:
         if self.iface.mapCanvas().mapTool() is self.tool:
             self.iface.mapCanvas().unsetMapTool(self.tool)
         self._clear_marker()
-        self.watcher.remove()
         self.attacher.remove()
         self.credentials.clear()
 
@@ -164,6 +163,12 @@ class AirdressPlugin:
         QgsMessageLog.logMessage(text, LOG_TAG, Qgis.MessageLevel.Info)
 
     def report_answer(self, status: int, body) -> None:
+        """Say why a request was refused. Safe from any thread: off the main
+        thread it is handed to the main thread, because a message-bar widget
+        created elsewhere crashes QGIS."""
+        if QThread.currentThread() is not QCoreApplication.instance().thread():
+            self.notice.answer.emit(int(status), json.dumps(body if isinstance(body, dict) else {}))
+            return
         error = body.get("error") if isinstance(body, dict) else None
         code = refusals.code_for(status, error)
         if code == "geocoder_starting":
@@ -219,22 +224,8 @@ class AirdressPlugin:
             return True
         return self.sign_in()
 
-    def on_refused(self, status: int, host: str) -> None:
-        """A tile or style request from QGIS was refused. Find out why with
-        one request of our own (we read the body; QGIS's own replies we never
-        touch), then repaint or say so."""
-        if status == 403:
-            self.session.expire_maps()
-            if not self.renew():
-                return
-        code_status, body = net.get_json(config.MAPS_ORIGIN + "/current.json")
-        if code_status == 200:
-            if status == 403:
-                self._repaint()
-            elif status == 429:
-                self.say("rate_limited")
-            return
-        self.report_answer(code_status, body)
+    def _on_answer(self, status: int, body: str) -> None:
+        self.report_answer(status, json.loads(body or "{}"))
 
     # --- layers -------------------------------------------------------------
 
