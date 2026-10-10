@@ -51,4 +51,7 @@ jobs:
       QT_QPA_PLATFORM: offscreen
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-      - run: python3 -m pytest -q -p no:cacheprovider tests
+      - run: python3 -m pip install --quiet --break-system-packages pytest-cov
+      # 93% on 2026-10-11; the floor keeps the GUI glue tested, which is where
+      # the threading crash of 2026-10-10 lived.
+      - run: python3 -m pytest -q -p no:cacheprovider --cov=airdress_qgis --cov-report=term-missing --cov-fail-under=90 tests

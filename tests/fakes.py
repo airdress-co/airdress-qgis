@@ -28,6 +28,8 @@ class FakeHub:
         self.revoked = False
         self.calls: list[tuple[str, dict]] = []
         self.device_pending = 2
+        # "ok" (pending, then tokens), "slow_down" once, or "denied".
+        self.device_mode = "ok"
         self.mint_status = 200
 
     def _new(self, prefix: str) -> str:
@@ -71,6 +73,11 @@ class FakeHub:
                 return 400, {"error": "invalid_grant"}
             return self._grant()
         if grant.endswith("device_code"):
+            if self.device_mode == "denied":
+                return 400, {"error": "access_denied"}
+            if self.device_mode == "slow_down":
+                self.device_mode = "ok"
+                return 400, {"error": "slow_down"}
             if self.device_pending:
                 self.device_pending -= 1
                 return 400, {"error": "authorization_pending"}

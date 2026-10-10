@@ -38,3 +38,6 @@ def pytest_unconfigure(config):
         sys.stdout.flush()
         sys.stderr.flush()
         os._exit(_status["code"])
+
+
+from .conftest_plugin import wired  # noqa: F401
