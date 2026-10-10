@@ -23,6 +23,15 @@ jobs:
           fetch-depth: 0
       - name: Build the plugin zip (refuses a tag that is not metadata.txt's version)
         run: scripts/build-zip.sh "$GITHUB_REF_NAME" | tee "$RUNNER_TEMP/sha256"
+      # The zip is uploaded to plugins.qgis.org by hand, so anyone must be able
+      # to rebuild it from the tag and get the same bytes. Build it again under
+      # another umask and timezone and refuse to publish if the two differ.
+      - name: The zip rebuilds to the same bytes
+        run: |
+          zip="dist/airdress_qgis-${GITHUB_REF_NAME#v}.zip"
+          mv "$zip" "$RUNNER_TEMP/first.zip"
+          (umask 002; TZ=Asia/Tokyo scripts/build-zip.sh "$GITHUB_REF_NAME" >/dev/null)
+          cmp "$RUNNER_TEMP/first.zip" "$zip"
       - name: Publish the release with the zip
         env:
           GH_TOKEN: ${{ github.token }}

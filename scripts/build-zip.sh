@@ -11,14 +11,21 @@ grep -qx "version=${version}" <(git show "${tag}:airdress_qgis/metadata.txt") \
   || { echo "metadata.txt version does not match ${tag}" >&2; exit 1; }
 mkdir -p dist
 out="dist/airdress_qgis-${version}.zip"
-# git archive writes the commit time as every entry's mtime; LICENSE is
-# placed inside the plugin folder, where the plugin repository looks for it.
-git archive --format=zip --prefix=airdress_qgis/ -o "${out}.tmp" "${tag}:airdress_qgis"
+# Archive the tagged COMMIT, limited to the plugin folder: git archive then
+# writes the commit time as every entry's mtime. (Archiving the tree
+# `${tag}:airdress_qgis` has no commit to take a time from and stamps the
+# current time, so two builds of one tag differed.) TZ=UTC because zip
+# stores local time.
+export TZ=UTC
+git archive --format=zip -o "${out}.tmp" "${tag}" -- airdress_qgis
 tmp="$(mktemp -d)"
 trap 'rm -rf "${tmp}"' EXIT
+# LICENSE is placed inside the plugin folder, where the plugin repository
+# looks for it, with fixed permissions: a umask must not change the bytes.
 git show "${tag}:LICENSE" > "${tmp}/LICENSE"
+chmod 0644 "${tmp}/LICENSE"
 (cd "${tmp}" && mkdir airdress_qgis && mv LICENSE airdress_qgis/ \
   && touch -d "@$(git -C "${OLDPWD}" log -1 --format=%ct "${tag}")" airdress_qgis/LICENSE \
-  && TZ=UTC zip -X -q "${OLDPWD}/${out}.tmp" airdress_qgis/LICENSE)
+  && zip -X -q "${OLDPWD}/${out}.tmp" airdress_qgis/LICENSE)
 mv "${out}.tmp" "${out}"
 sha256sum "${out}"
