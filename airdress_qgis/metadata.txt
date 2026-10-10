@@ -2,11 +2,14 @@
 name=Airdress
 qgisMinimumVersion=3.40
 qgisMaximumVersion=4.99
-description=Sign in with your Airdress account and use the Airdress map in QGIS: a styled basemap, county and city boundaries, and search.
+description=The Airdress map as QGIS layers: a styled vector basemap, county and city boundaries, and place search. Detailed in Europe and North America.
+# release-please sets the version from the conventional commits on main.
+# x-release-please-start-version
 version=0.1.0
+# x-release-please-end
 author=Airdress
 email=support@airdress.co
-about=The Airdress map (maps.airdress.co) as QGIS layers. Sign in with your Airdress account through your browser — no API key ever goes into a project. Detailed coverage is Europe and North America; the rest of the world is an overview. Search is one query at a time. Every map credits its sources; see maps.airdress.co/licenses. The plugin sends no usage data.
+about=The Airdress map (maps.airdress.co) as QGIS layers: a styled vector basemap, county and city boundaries, and place search. Coverage is detailed in Europe and North America and an overview elsewhere. You need an Airdress account with map access (airdress.co). You sign in through your browser, and no API key goes into your project files. Search runs one query at a time. Every map credits its sources (maps.airdress.co/licenses). The plugin sends no usage data.
 tracker=https://github.com/airdress-co/airdress-qgis/issues
 repository=https://github.com/airdress-co/airdress-qgis
 homepage=https://github.com/airdress-co/airdress-qgis
