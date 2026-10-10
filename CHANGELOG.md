@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.2](https://github.com/airdress-co/airdress-qgis/compare/v0.1.1...v0.1.2) (2026-10-10)
+
+
+### Bug Fixes
+
+* an account on the waitlist is told so, not asked to sign in ([7c2f210](https://github.com/airdress-co/airdress-qgis/commit/7c2f210b490635c52f4f42e185735caeebaaee94))
+* QGIS no longer crashes when a search is refused ([122d734](https://github.com/airdress-co/airdress-qgis/commit/122d7341f7dcfdf084fea82145a2cd7e6cdc5d23))
+
 ## [0.1.1](https://github.com/airdress-co/airdress-qgis/compare/v0.1.0...v0.1.1) (2026-10-10)
 
 
