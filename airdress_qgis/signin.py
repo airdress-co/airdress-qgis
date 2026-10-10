@@ -122,9 +122,7 @@ class SignInDialog(QDialog):
         self._interval = self._device.interval
         self._next_poll = time.monotonic() + self._interval
         uri = self._device.verification_uri
-        self.message.setText(
-            f'On any device, open <a href="{uri}">{uri}</a>, sign in, and enter this code:'
-        )
+        self.message.setText(f'On any device, open <a href="{uri}">{uri}</a>, sign in, and enter this code:')
         self.message.setOpenExternalLinks(True)
         self.code.setText(self._device.user_code)
         self.code.show()
@@ -160,7 +158,7 @@ class SignInDialog(QDialog):
             self.tokens = tokens
             self.accept()
 
-    def done(self, result: int) -> None:  # noqa: A003 - QDialog API
+    def done(self, result: int) -> None:
         self._stop_loopback()
         self._timer.stop()
         super().done(result)

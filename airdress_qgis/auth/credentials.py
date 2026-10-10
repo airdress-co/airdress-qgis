@@ -8,14 +8,13 @@ nothing here ever does network I/O.
 from __future__ import annotations
 
 import threading
-from typing import Dict, Optional
 from urllib.parse import urlsplit
 
 
 class Credentials:
     def __init__(self) -> None:
         self._lock = threading.Lock()
-        self._by_host: Dict[str, str] = {}
+        self._by_host: dict[str, str] = {}
 
     def set(self, origin: str, token: str) -> None:
         host = _host(origin)
@@ -30,7 +29,7 @@ class Credentials:
         with self._lock:
             self._by_host.clear()
 
-    def for_url(self, url: str) -> Optional[str]:
+    def for_url(self, url: str) -> str | None:
         """The token for this URL's host — https only, exact host match, no
         suffix rule, no port other than 443."""
         parts = urlsplit(url)
@@ -42,7 +41,7 @@ class Credentials:
         with self._lock:
             return self._by_host.get(host)
 
-    def hosts(self) -> "list[str]":
+    def hosts(self) -> list[str]:
         with self._lock:
             return sorted(self._by_host)
 

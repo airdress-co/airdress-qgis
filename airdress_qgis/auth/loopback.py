@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from typing import Optional
 from urllib.parse import parse_qs, urlsplit
 
 PAGE = """<!doctype html><meta charset="utf-8"><title>Airdress</title>
@@ -20,12 +19,12 @@ PAGE = """<!doctype html><meta charset="utf-8"><title>Airdress</title>
 
 class LoopbackReceiver:
     def __init__(self) -> None:
-        self.result: Optional[dict] = None
+        self.result: dict | None = None
         self._done = threading.Event()
         receiver = self
 
         class Handler(BaseHTTPRequestHandler):
-            def do_GET(self) -> None:  # noqa: N802 - http.server API
+            def do_GET(self) -> None:
                 parts = urlsplit(self.path)
                 if parts.path != "/callback":
                     self.send_error(404)
@@ -67,7 +66,7 @@ class LoopbackReceiver:
             self._server.handle_request()
         self._server.server_close()
 
-    def wait(self, timeout: float) -> Optional[dict]:
+    def wait(self, timeout: float) -> dict | None:
         self._done.wait(timeout)
         return self.result
 

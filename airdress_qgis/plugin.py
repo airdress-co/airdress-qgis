@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import os
 import time
-from typing import Optional
 
 from qgis.core import (
     Qgis,
@@ -78,9 +77,9 @@ class AirdressPlugin:
         self.timer = QTimer()
         self.timer.setSingleShot(True)
         self.timer.timeout.connect(self.renew)
-        self._notices: "dict[str, float]" = {}
-        self._marker: Optional[QgsVertexMarker] = None
-        self._actions: "list[QAction]" = []
+        self._notices: dict[str, float] = {}
+        self._marker: QgsVertexMarker | None = None
+        self._actions: list[QAction] = []
 
     # --- QGIS plugin API --------------------------------------------------
 
@@ -210,7 +209,7 @@ class AirdressPlugin:
         self._schedule(next_at)
         return True
 
-    def _schedule(self, at: Optional[float]) -> None:
+    def _schedule(self, at: float | None) -> None:
         if at is None:
             return
         self.timer.start(int(max(5.0, at - time.time()) * 1000))
@@ -239,7 +238,7 @@ class AirdressPlugin:
 
     # --- layers -------------------------------------------------------------
 
-    def current(self) -> Optional[current_json.Current]:
+    def current(self) -> current_json.Current | None:
         status, body = net.get_json(config.MAPS_ORIGIN + "/current.json")
         if status != 200 or not isinstance(body, dict):
             self.report_answer(status, body)
@@ -364,7 +363,7 @@ class AirdressPlugin:
 
     # --- attribution ------------------------------------------------------------
 
-    def visible_kinds(self) -> "list[str]":
+    def visible_kinds(self) -> list[str]:
         root = QgsProject.instance().layerTreeRoot()
         kinds = []
         for node in root.findLayers():

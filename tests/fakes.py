@@ -23,10 +23,10 @@ class FakeHub:
     def __init__(self, clock: Clock):
         self.clock = clock
         self._n = itertools.count(1)
-        self.live_refresh: "set[str]" = set()
-        self.rotated: "set[str]" = set()
+        self.live_refresh: set[str] = set()
+        self.rotated: set[str] = set()
         self.revoked = False
-        self.calls: "list[tuple[str, dict]]" = []
+        self.calls: list[tuple[str, dict]] = []
         self.device_pending = 2
         self.mint_status = 200
 

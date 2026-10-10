@@ -10,7 +10,6 @@ second copy.
 from __future__ import annotations
 
 import copy
-from typing import Optional
 
 from .. import config
 
@@ -41,15 +40,15 @@ def for_qgis(style: dict, basemap_template: str, origin: str = config.MAPS_ORIGI
     return out
 
 
-def sprite_urls(style: dict) -> "list[tuple[str, str]]":
+def sprite_urls(style: dict) -> list[tuple[str, str]]:
     """(json, png) URL pairs, 2x first: QGIS scales down better than up."""
-    base: Optional[str] = style.get("sprite") if isinstance(style.get("sprite"), str) else None
+    base: str | None = style.get("sprite") if isinstance(style.get("sprite"), str) else None
     if not base:
         return []
     return [(base + "@2x.json", base + "@2x.png"), (base + ".json", base + ".png")]
 
 
-def source_attributions(style: dict) -> "list[str]":
+def source_attributions(style: dict) -> list[str]:
     """Plain-text attributions from the style's sources (the HTML stripped)."""
     import re
 

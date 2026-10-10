@@ -12,11 +12,10 @@
 from __future__ import annotations
 
 import json
-from typing import Optional
 from urllib.parse import urlencode, urlsplit
 
 from qgis.core import QgsBlockingNetworkRequest, QgsNetworkAccessManager
-from qgis.PyQt.QtCore import QByteArray, QBuffer, QIODevice, QObject, QUrl, pyqtSignal
+from qgis.PyQt.QtCore import QBuffer, QByteArray, QIODevice, QObject, QUrl, pyqtSignal
 from qgis.PyQt.QtNetwork import QNetworkReply, QNetworkRequest
 
 from .auth.credentials import Credentials
@@ -32,7 +31,7 @@ def _request(url: str, headers: dict) -> QNetworkRequest:
     return request
 
 
-def _answer(blocking: QgsBlockingNetworkRequest) -> "tuple[int, Optional[dict]]":
+def _answer(blocking: QgsBlockingNetworkRequest) -> tuple[int, dict | None]:
     reply = blocking.reply()
     status = reply.attribute(_STATUS)
     status = int(status) if status is not None else 0
@@ -44,7 +43,7 @@ def _answer(blocking: QgsBlockingNetworkRequest) -> "tuple[int, Optional[dict]]"
     return status, body
 
 
-def _post(url: str, payload: bytes, content_type: str, headers: dict, feedback=None) -> "tuple[int, Optional[dict]]":
+def _post(url: str, payload: bytes, content_type: str, headers: dict, feedback=None) -> tuple[int, dict | None]:
     request = _request(url, headers)
     request.setHeader(_CONTENT_TYPE, content_type)
     request.setRawHeader(b"Accept", b"application/json")
@@ -56,17 +55,17 @@ def _post(url: str, payload: bytes, content_type: str, headers: dict, feedback=N
     return _answer(blocking)
 
 
-def post_form(url: str, form: Optional[dict], headers: dict) -> "tuple[int, Optional[dict]]":
+def post_form(url: str, form: dict | None, headers: dict) -> tuple[int, dict | None]:
     """application/x-www-form-urlencoded, for the authorization server; and
     an empty POST with a bearer, for the maps-token mint."""
     return _post(url, urlencode(form or {}).encode("ascii"), "application/x-www-form-urlencoded", headers)
 
 
-def post_json(url: str, body: dict, headers: Optional[dict] = None, feedback=None) -> "tuple[int, Optional[dict]]":
+def post_json(url: str, body: dict, headers: dict | None = None, feedback=None) -> tuple[int, dict | None]:
     return _post(url, json.dumps(body).encode("utf-8"), "application/json", headers or {}, feedback)
 
 
-def get_json(url: str, headers: Optional[dict] = None) -> "tuple[int, Optional[dict]]":
+def get_json(url: str, headers: dict | None = None) -> tuple[int, dict | None]:
     blocking = QgsBlockingNetworkRequest()
     request = _request(url, headers or {})
     request.setRawHeader(b"Accept", b"application/json")
@@ -74,7 +73,7 @@ def get_json(url: str, headers: Optional[dict] = None) -> "tuple[int, Optional[d
     return _answer(blocking)
 
 
-def get_bytes(url: str) -> "tuple[int, bytes]":
+def get_bytes(url: str) -> tuple[int, bytes]:
     blocking = QgsBlockingNetworkRequest()
     blocking.get(_request(url, {}), True)
     reply = blocking.reply()
@@ -85,7 +84,7 @@ def get_bytes(url: str) -> "tuple[int, bytes]":
 class Attacher:
     def __init__(self, credentials: Credentials):
         self._credentials = credentials
-        self._id: Optional[str] = None
+        self._id: str | None = None
 
     def __call__(self, request: QNetworkRequest) -> None:
         if request.hasRawHeader(b"Authorization"):
@@ -110,10 +109,10 @@ class Watcher(QObject):
 
     refused = pyqtSignal(int, str)
 
-    def __init__(self, hosts: "set[str]"):
+    def __init__(self, hosts: set[str]):
         super().__init__()
         self.hosts = {h.lower() for h in hosts}
-        self._id: Optional[str] = None
+        self._id: str | None = None
 
     def __call__(self, request: QNetworkRequest, reply: QNetworkReply) -> None:
         host = (urlsplit(request.url().toString()).hostname or "").lower()

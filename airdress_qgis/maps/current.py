@@ -8,7 +8,6 @@ or remembered snapshot would 404 the day the archive moves. Every layer is
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 from .. import config
 
@@ -19,9 +18,9 @@ KINDS = ("basemap", "boundaries")
 class Current:
     style: str  # absolute URL
     snapshot: str
-    tiles: "dict[str, str]"  # kind -> absolute XYZ template
+    tiles: dict[str, str]  # kind -> absolute XYZ template
 
-    def template(self, kind: str) -> Optional[str]:
+    def template(self, kind: str) -> str | None:
         return self.tiles.get(kind)
 
 

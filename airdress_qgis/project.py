@@ -8,7 +8,7 @@ style edits are kept: only the source changes.
 
 from __future__ import annotations
 
-from typing import Callable, Iterable, Optional
+from collections.abc import Iterable
 
 from qgis.core import QgsDataProvider, QgsProject
 

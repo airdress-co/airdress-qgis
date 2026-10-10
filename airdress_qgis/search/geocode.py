@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import Optional
 
 MIN_CHARS = 3
 DEBOUNCE_MS = 300
@@ -31,10 +30,10 @@ def zoom_for_width(width_degrees: float) -> int:
     what /geocode accepts."""
     if width_degrees <= 0:
         return 12
-    return max(3, min(18, int(round(math.log2(360.0 / width_degrees) + 1))))
+    return max(3, min(18, round(math.log2(360.0 / width_degrees) + 1)))
 
 
-def forward_body(text: str, focus: Optional["tuple[float, float]"], zoom: Optional[int], lang: str) -> Optional[dict]:
+def forward_body(text: str, focus: tuple[float, float] | None, zoom: int | None, lang: str) -> dict | None:
     text = text.strip()
     if len(text) < MIN_CHARS:
         return None
@@ -58,14 +57,14 @@ def format_address(address) -> str:
     street = " ".join(str(address[k]) for k in ("street", "housenumber") if address.get(k))
     rest = [str(address[k]) for k in _ADDRESS_ORDER[2:] if address.get(k)]
     parts = ([street] if street else []) + rest
-    seen: "list[str]" = []
+    seen: list[str] = []
     for part in parts:
         if part not in seen:
             seen.append(part)
     return ", ".join(seen)
 
 
-def hits(body: Optional[dict]) -> "list[Hit]":
+def hits(body: dict | None) -> list[Hit]:
     out = []
     for r in (body or {}).get("results", []) or []:
         point = r.get("point")

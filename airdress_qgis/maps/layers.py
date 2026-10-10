@@ -8,7 +8,7 @@ preprocessor, so a saved project holds no secret.
 from __future__ import annotations
 
 import json
-from typing import Callable, Optional
+from collections.abc import Callable
 
 from qgis.core import (
     QgsDataSourceUri,
@@ -46,7 +46,7 @@ def source_uri(template: str, kind: str) -> str:
     return bytes(uri.encodedUri()).decode("utf-8")
 
 
-def kind_of(layer) -> Optional[str]:
+def kind_of(layer) -> str | None:
     value = layer.customProperty(config.LAYER_PROPERTY)
     return str(value) if value in NAMES else None
 
@@ -66,7 +66,7 @@ def _mark(layer: QgsVectorTileLayer, kind: str) -> None:
         pass
 
 
-def basemap(current: Current, published_style: dict, get_bytes: GetBytes) -> "tuple[QgsVectorTileLayer, list[str]]":
+def basemap(current: Current, published_style: dict, get_bytes: GetBytes) -> tuple[QgsVectorTileLayer, list[str]]:
     """The basemap, converted from the live style. Returns the layer and the
     converter's warnings (kept for the debug view, never shown as errors)."""
     template = current.template("basemap")
@@ -114,7 +114,7 @@ def boundaries(current: Current) -> QgsVectorTileLayer:
     styles = []
     for name, subtypes, min_zoom, colour, width in _LINES:
         s = QgsVectorTileBasicRendererStyle(name, "areas", QgsWkbTypes.GeometryType.PolygonGeometry)
-        s.setFilterExpression("\"subtype\" IN (%s)" % ", ".join(f"'{t}'" for t in subtypes))
+        s.setFilterExpression('"subtype" IN ({})'.format(", ".join(f"'{t}'" for t in subtypes)))
         s.setMinZoomLevel(min_zoom)
         s.setSymbol(
             QgsFillSymbol.createSimple(
