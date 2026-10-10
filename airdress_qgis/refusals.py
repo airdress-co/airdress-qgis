@@ -9,6 +9,7 @@ from __future__ import annotations
 MESSAGES = {
     "en": {
         "not_allowed": "Your Airdress account does not have access to the map yet.",
+        "not_admitted": "Your Airdress account isn't past the waitlist yet, so the map isn't available to it.",
         "sign_in_required": "Sign in to Airdress to show the map.",
         "token_expired": "Your map session expired. Renewing it…",
         "check_unavailable": "The map service cannot check your access right now. Try again in a minute.",
@@ -22,6 +23,7 @@ MESSAGES = {
     },
     "de": {
         "not_allowed": "Dein Airdress-Konto hat noch keinen Zugang zur Karte.",
+        "not_admitted": "Dein Airdress-Konto ist noch nicht von der Warteliste freigeschaltet, deshalb ist die Karte noch nicht verfügbar.",
         "sign_in_required": "Melde dich bei Airdress an, um die Karte zu sehen.",
         "token_expired": "Deine Kartensitzung ist abgelaufen. Sie wird erneuert …",
         "check_unavailable": "Der Kartendienst kann deinen Zugang gerade nicht prüfen. Versuch es in einer Minute noch einmal.",

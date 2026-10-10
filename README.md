@@ -5,7 +5,7 @@ basemap, county and city boundaries, and place search. You sign in with your
 Airdress account, and no API key goes into any project file.
 
 Coverage is detailed in Europe and North America and an overview elsewhere.
-You need an Airdress account with map access.
+You need an Airdress account that is past the waitlist.
 
 - **Sign in** opens your browser. Where the browser cannot reach QGIS (a
   remote desktop, a locked-down machine), use the code shown instead.
