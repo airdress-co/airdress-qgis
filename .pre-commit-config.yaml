@@ -1,0 +1,64 @@
+# Run with `prek run --all-files` (or pre-commit). CI runs the same, as the
+# required `checks` job. Hook revisions are pinned by commit SHA; the tag each
+# one is sits beside it. `prek install` installs the commit-msg hook too.
+default_install_hook_types: [pre-commit, commit-msg]
+repos:
+  # Commit messages are conventional commits: release-please reads them to
+  # choose the next version and write CHANGELOG.md. CI runs the same checker
+  # over a PR's title and commits (scripts/conventional-commits.sh).
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: 91ab4bf57e58b32adf1a122681f6ebe164d081c8 # frozen: v4.4.0
+    hooks:
+      - id: conventional-pre-commit
+        args: [build, chore, ci, deps, docs, feat, fix, perf, refactor, revert, style, test]
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: 3e8a8703264a2f4a69428a0aa4dcb512790b2c8c # frozen: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+        exclude: ^LICENSE$
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: check-json
+      - id: check-toml
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: 2eeb5678de71a00c0902cbda7105d328432f72cb # frozen: v0.16.8
+    hooks:
+      - id: ruff-check
+      - id: ruff-format
+  - repo: https://github.com/Mateusz-Grzelinski/actionlint-py
+    rev: 805f85e558841bf4d852335e036b33d2b26be1cc # frozen: v1.7.12.25
+    hooks:
+      - id: actionlint
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: 83d9cd684c87d95d656c1458ef04895a7f1cbd8e # frozen: v8.30.1
+    hooks:
+      - id: gitleaks
+  - repo: local
+    hooks:
+      - id: qt-imports
+        name: Qt only through qgis.PyQt (one source for Qt5 and Qt6)
+        entry: python3 scripts/check-qt-imports.py
+        language: system
+        pass_filenames: false
+        files: \.py$
+      - id: no-internal-refs
+        name: no internal document numbers
+        # This repository is public: internal process identifiers (design,
+        # runbook and research-record numbers) must not appear in it.
+        entry: '(?i)\b(spec|rb|rdr|rcp)[_-]?[0-9]{3}\b'
+        language: pygrep
+        exclude: ^(\.pre-commit-config\.yaml|.*\.(png|svg))$
+      - id: no-internal-names
+        name: no internal hostnames, projects or test accounts
+        # Public repository: none of our internal estate may be named here.
+        entry: '(?i)(airdress-co-ops|qa-device|a\.airdr\.es|\bvm[123]\b|ai-nas|secretmanager|\b100\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\.[0-9]+\.[0-9]+\b|\b192\.168\.[0-9]+\.[0-9]+\b|\b10\.[0-9]+\.[0-9]+\.[0-9]+\b)'
+        language: pygrep
+        exclude: ^\.pre-commit-config\.yaml$
+      - id: no-ai-attribution
+        name: no AI tool references
+        entry: '(?i)\b(claude|anthropic|copilot co-authored)\b'
+        language: pygrep
+        exclude: ^(\.pre-commit-config\.yaml|.*\.png)$

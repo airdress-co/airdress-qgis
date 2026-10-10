@@ -1,0 +1,35 @@
+# Keeps a release PR open for the next version, from the conventional commits
+# on main (release-please). The PR bumps airdress_qgis/metadata.txt and
+# pyproject.toml and writes CHANGELOG.md. Merging it tags `vX.Y.Z` and creates
+# a draft GitHub release; the tag starts release.yml, which builds the plugin
+# zip and publishes the draft with the zip attached.
+#
+# Runs as the airdress-bot GitHub App, not GITHUB_TOKEN: a PR or a tag made
+# with GITHUB_TOKEN starts no workflow, so the release PR would get no
+# checks and the tag would never be built.
+name: Release PR
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: release-please
+  cancel-in-progress: false
+jobs:
+  release-please:
+    name: release-please
+    timeout-minutes: 10
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        id: bot
+        with:
+          app-id: ${{ secrets.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          token: ${{ steps.bot.outputs.token }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
