@@ -28,9 +28,11 @@ def repoint(project_layers: Iterable, current: Current) -> int:
         template = current.template(kind) if kind else None
         if template is None:
             continue
-        uri = layers.source_uri(template, kind)
-        if layer.source() == uri:
+        # Compare the decoded tile URL: QGIS 4 percent-encodes it inside the
+        # source string and QGIS 3 does not, so raw strings never match on 4.
+        if layers.template_of(layer.source()) == template:
             continue
+        uri = layers.source_uri(template, kind)
         layer.setDataSource(uri, layer.name(), layer.providerType(), QgsDataProvider.ProviderOptions())
         moved += 1
     return moved

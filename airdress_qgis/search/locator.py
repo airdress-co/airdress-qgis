@@ -70,11 +70,18 @@ class AirdressLocatorFilter(QgsLocatorFilter):
             self.resultFetched.emit(result)
 
     def triggerResult(self, result):
-        self.plugin.go_to(result.userData())
+        self.plugin.go_to(_data(result))
 
     def triggerResultFromAction(self, result, action_id):
         if action_id == ADD_TO_SCRATCH:
-            self.plugin.add_to_scratch(result.userData())
+            self.plugin.add_to_scratch(_data(result))
+
+
+def _data(result) -> dict:
+    """A result's user data. QGIS 3.40 exposes it as an attribute, newer
+    releases as a method; clicking a result raised on 3.40 before this."""
+    data = result.userData
+    return data() if callable(data) else data
 
 
 def point_in(crs, lon: float, lat: float) -> QgsPointXY:
