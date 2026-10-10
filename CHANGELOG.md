@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/airdress-co/airdress-qgis/compare/v0.1.0...v0.1.1) (2026-10-10)
+
+
+### Bug Fixes
+
+* **release:** the plugin zip rebuilds to the same bytes ([c3d3b2c](https://github.com/airdress-co/airdress-qgis/commit/c3d3b2c9375f19d404649e5a22df65728effd9ba))
+
 ## 0.1.0 (2026-10-10)
 
 

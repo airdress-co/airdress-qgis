@@ -5,7 +5,7 @@ qgisMaximumVersion=4.99
 description=The Airdress map as QGIS layers: a styled vector basemap, county and city boundaries, and place search. Detailed in Europe and North America.
 # release-please sets the version from the conventional commits on main.
 # x-release-please-start-version
-version=0.1.0
+version=0.1.1
 # x-release-please-end
 author=Airdress
 email=support@airdress.co
