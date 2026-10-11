@@ -74,7 +74,7 @@ def test_the_locator_lists_results_with_their_credit(wired):
         )
     )
     filt = AirdressLocatorFilter(wired)
-    assert (filt.name(), filt.prefix(), filt.displayName()) == ("airdress", "ad", "Airdress search")
+    assert (filt.name(), filt.prefix(), filt.displayName()) == ("airdress", "air", "Airdress search")
     assert isinstance(filt.clone(), AirdressLocatorFilter)
     (result,) = _run(filt, "munich")
     assert result.displayString == "München" and result.description == "Bayern — GeoNames"
@@ -97,3 +97,26 @@ def test_the_locator_asks_nothing_when_signed_out_or_too_short(wired):
     sign_in(wired)
     assert _run(filt, "mu") == []
     assert asked == []
+
+
+def test_qgis_honours_the_prefix(wired):
+    # QGIS drops a plugin filter's prefix shorter than three characters
+    # without a word; the first live run found `ad` had never worked.
+    from qgis.core import QgsLocator
+
+    from airdress_qgis.search.locator import AirdressLocatorFilter
+
+    filt = AirdressLocatorFilter(wired)
+    locator = QgsLocator()
+    locator.registerFilter(filt)
+    assert filt.activePrefix() == filt.prefix()
+
+
+def test_search_runs_off_the_main_thread(wired):
+    # A network round trip per search must not freeze the window: QGIS runs a
+    # FlagFast filter on the main thread.
+    from qgis.core import QgsLocatorFilter
+
+    from airdress_qgis.search.locator import AirdressLocatorFilter
+
+    assert not AirdressLocatorFilter(wired).flags() & QgsLocatorFilter.Flag.FlagFast

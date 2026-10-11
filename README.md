@@ -11,8 +11,8 @@ You need an Airdress account that is past the waitlist.
   remote desktop, a locked-down machine), use the code shown instead.
 - **Add basemap / Add boundaries** from the Airdress toolbar button or the
   *Airdress* entry in the Browser panel.
-- **Search** in the locator bar (`Ctrl+K`) with the prefix `ad`, e.g.
-  `ad munich`. One query at a time; there is deliberately no batch
+- **Search** in the locator bar (`Ctrl+K`) with the prefix `air`, e.g.
+  `air munich`. One query at a time; there is deliberately no batch
   geocoding.
 - **Attribution** is drawn on the map and added to print layouts with
   *Airdress → Add attribution to layout*. Credits and licences:
