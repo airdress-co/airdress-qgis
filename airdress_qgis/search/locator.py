@@ -1,4 +1,4 @@
-"""Airdress search in the QGIS locator bar (prefix `ad`)."""
+"""Airdress search in the QGIS locator bar (prefix `air`)."""
 
 from __future__ import annotations
 
@@ -34,10 +34,15 @@ class AirdressLocatorFilter(QgsLocatorFilter):
         return "Airdress search"
 
     def prefix(self):
-        return "ad"
+        # At least three characters: QGIS silently ignores a shorter prefix
+        # from a plugin's filter (only its own core filters may use one or
+        # two), so `ad` never routed a query here.
+        return "air"
 
-    def flags(self):
-        return QgsLocatorFilter.Flag.FlagFast if hasattr(QgsLocatorFilter, "Flag") else 0
+    # No flags(): FlagFast would have QGIS run this on the main thread, and
+    # every search is a network round trip; the window froze for it (1.7 s
+    # measured live). Off the main thread, answers reach the GUI only through
+    # the plugin's notifier.
 
     def fetchResults(self, string, context, feedback):
         if not self.plugin.session.signed_in:
