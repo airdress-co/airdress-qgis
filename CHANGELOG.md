@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/airdress-co/airdress-qgis/compare/v0.1.2...v0.1.3) (2026-10-11)
+
+
+### Bug Fixes
+
+* search answers to the `air` prefix and no longer freezes QGIS ([675ea58](https://github.com/airdress-co/airdress-qgis/commit/675ea581a5bf651256ba55d38c460188b8824010))
+
 ## [0.1.2](https://github.com/airdress-co/airdress-qgis/compare/v0.1.1...v0.1.2) (2026-10-10)
 
 
