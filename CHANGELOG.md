@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/airdress-co/airdress-qgis/compare/v0.1.3...v0.2.0) (2026-10-14)
+
+
+### Features
+
+* satellite imagery and aerial photos as QGIS layers ([5bc09f0](https://github.com/airdress-co/airdress-qgis/commit/5bc09f03ce23ea223a668fa288cee9317f9ce018))
+
 ## [0.1.3](https://github.com/airdress-co/airdress-qgis/compare/v0.1.2...v0.1.3) (2026-10-11)
 
 
