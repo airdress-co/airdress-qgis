@@ -38,6 +38,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 MUNICH = (11.5755, 48.1372)
 BERLIN = (13.4050, 52.5200)
 HAMBURG = (9.9937, 53.5511)
+VIENNA = (16.3725, 48.2085)
 SEARCH = "air munich"
 NEAR_KM = 25.0
 
@@ -284,6 +285,49 @@ def main() -> int:
             "basemap-drawn",
             share > 0.95 and colours >= 8 and tiles.statuses.get(200, 0) > 0 and set(tiles.statuses) == {200},
             f"painted={share:.0%} colours={colours} tiles={tiles.text()}",
+        )
+
+        # 2b. The Satellite mosaic and the aerial photos, drawn (WebP tiles).
+        plugin.add_layer("imagery")
+        found = [l for l in project.mapLayers().values() if layers.kind_of(l) == "imagery"]
+        step(
+            "satellite-added", len(found) == 1 and found[0].isValid(), f"layers={len(found)} messages={messages(iface)}"
+        )
+        tiles.reset()
+        image = render(found[0], BERLIN, 11)
+        keep(image, "satellite-berlin-z11.png")
+        share, colours = drawn(image)
+        step(
+            "satellite-drawn",
+            share > 0.95 and colours >= 50 and tiles.statuses.get(200, 0) > 0 and set(tiles.statuses) == {200},
+            f"painted={share:.0%} colours={colours} tiles={tiles.text()}",
+        )
+        plugin.add_aerial()
+        aerial = {l.name(): l for l in project.mapLayers().values() if layers.kind_of(l) == "aerial"}
+        vienna = aerial.get("Airdress aerial — Vienna")
+        step(
+            "aerial-added",
+            vienna is not None and vienna.isValid(),
+            f"layers={sorted(aerial)} messages={messages(iface)}",
+        )
+        tiles.reset()
+        image = render(vienna, VIENNA, 15)
+        keep(image, "aerial-vienna-z15.png")
+        share, colours = drawn(image)
+        canvas.setExtent(
+            QgsCoordinateTransform(
+                QgsCoordinateReferenceSystem("EPSG:4326"), canvas.mapSettings().destinationCrs(), project
+            ).transformBoundingBox(QgsRectangle(VIENNA[0] - 0.02, VIENNA[1] - 0.01, VIENNA[0] + 0.02, VIENNA[1] + 0.01))
+        )
+        credited = "basemap.at" in plugin.attribution_text()
+        step(
+            "aerial-drawn",
+            share > 0.95
+            and colours >= 50
+            and tiles.statuses.get(200, 0) > 0
+            and set(tiles.statuses) == {200}
+            and credited,
+            f"painted={share:.0%} colours={colours} tiles={tiles.text()} credited={credited}",
         )
 
         # 3. Search, from a map looking at Berlin, then go to the top answer.
