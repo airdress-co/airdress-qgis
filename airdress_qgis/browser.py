@@ -6,13 +6,15 @@ from qgis.core import Qgis, QgsDataCollectionItem, QgsDataItem, QgsDataItemProvi
 
 from .maps.layers import NAMES
 
+LABELS = {"aerial": "Aerial photos"}
+
 
 class _Leaf(QgsDataItem):
     def __init__(self, parent, plugin, kind: str):
         super().__init__(
             Qgis.BrowserItemType.Custom,
             parent,
-            NAMES[kind].replace("Airdress ", "").capitalize(),
+            LABELS.get(kind, NAMES[kind].replace("Airdress ", "").capitalize()),
             "airdress:/" + kind,
             "airdress",
         )
@@ -25,7 +27,10 @@ class _Leaf(QgsDataItem):
         return False
 
     def handleDoubleClick(self):
-        self.plugin.add_layer(self.kind)
+        if self.kind == "aerial":
+            self.plugin.add_aerial()
+        else:
+            self.plugin.add_layer(self.kind)
         return True
 
 
@@ -36,7 +41,7 @@ class _Root(QgsDataCollectionItem):
         self.setIcon(plugin.icon)
 
     def createChildren(self):
-        return [_Leaf(self, self.plugin, "basemap"), _Leaf(self, self.plugin, "boundaries")]
+        return [_Leaf(self, self.plugin, kind) for kind in ("basemap", "boundaries", "imagery", "aerial")]
 
 
 class AirdressItemProvider(QgsDataItemProvider):
