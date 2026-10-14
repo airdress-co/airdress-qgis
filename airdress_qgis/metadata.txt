@@ -2,18 +2,18 @@
 name=Airdress
 qgisMinimumVersion=3.40
 qgisMaximumVersion=4.99
-description=The Airdress map as QGIS layers: a styled vector basemap, county and city boundaries, and place search. Detailed in Europe and North America.
+description=The Airdress map as QGIS layers: a styled vector basemap, county and city boundaries, satellite imagery, aerial photos of selected cities, and place search. Detailed in Europe and North America.
 # release-please sets the version from the conventional commits on main.
 # x-release-please-start-version
 version=0.1.3
 # x-release-please-end
 author=Airdress
 email=support@airdress.co
-about=The Airdress map (maps.airdress.co) as QGIS layers: a styled vector basemap, county and city boundaries, and place search. Coverage is detailed in Europe and North America and an overview elsewhere. You need an Airdress account that is past the waitlist (airdress.co). You sign in through your browser, and no API key goes into your project files. Search runs one query at a time. Every map credits its sources (maps.airdress.co/licenses). The plugin sends no usage data.
+about=The Airdress map (maps.airdress.co) as QGIS layers: a styled vector basemap, county and city boundaries, Sentinel-2 satellite imagery, government aerial photos of selected cities, and place search. Coverage is detailed in Europe and North America and an overview elsewhere. You need an Airdress account that is past the waitlist (airdress.co). You sign in through your browser, and no API key goes into your project files. Search runs one query at a time. Every map credits its sources (maps.airdress.co/licenses). The plugin sends no usage data.
 tracker=https://github.com/airdress-co/airdress-qgis/issues
 repository=https://github.com/airdress-co/airdress-qgis
 homepage=https://github.com/airdress-co/airdress-qgis
-tags=basemap,vector tiles,geocoding,openstreetmap,overture,boundaries
+tags=basemap,vector tiles,geocoding,openstreetmap,overture,boundaries,satellite,sentinel-2,aerial imagery,orthophoto
 category=Web
 icon=icon.svg
 experimental=True

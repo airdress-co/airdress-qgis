@@ -19,6 +19,9 @@ MESSAGES = {
         "signed_out": "You were signed out of Airdress. Sign in again to show the map.",
         "session_only": "Signed in for this session only. Set a QGIS master password to stay signed in.",
         "network": "Airdress could not be reached. Check your connection.",
+        "no_webp": "This QGIS cannot read WebP images, so it cannot draw Airdress imagery. Install Qt's image format plugins (on Debian and Ubuntu: qt5-image-formats-plugins for QGIS 3, qt6-image-formats-plugins for QGIS 4), then restart QGIS.",
+        "no_imagery": "The Airdress map has no satellite imagery right now.",
+        "no_aerial": "The Airdress map has no aerial photos right now.",
         "generic": "The Airdress map did not answer as expected. Try again later.",
     },
     "de": {
@@ -33,6 +36,9 @@ MESSAGES = {
         "signed_out": "Du wurdest bei Airdress abgemeldet. Melde dich erneut an, um die Karte zu sehen.",
         "session_only": "Nur für diese Sitzung angemeldet. Lege in QGIS ein Master-Passwort fest, um angemeldet zu bleiben.",
         "network": "Airdress ist nicht erreichbar. Prüfe deine Verbindung.",
+        "no_webp": "Dieses QGIS kann keine WebP-Bilder lesen und deshalb keine Airdress-Luftbilder zeichnen. Installiere die Bildformat-Plugins von Qt (unter Debian und Ubuntu: qt5-image-formats-plugins für QGIS 3, qt6-image-formats-plugins für QGIS 4) und starte QGIS neu.",
+        "no_imagery": "Die Airdress-Karte hat gerade keine Satellitenbilder.",
+        "no_aerial": "Die Airdress-Karte hat gerade keine Luftbilder.",
         "generic": "Die Airdress-Karte hat nicht wie erwartet geantwortet. Versuch es später noch einmal.",
     },
 }

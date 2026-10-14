@@ -1,4 +1,5 @@
-"""Airdress layers as QGIS vector tile layers.
+"""Airdress layers: vector tile layers for the map, XYZ raster layers for
+the Satellite mosaic and the aerial photos.
 
 A layer's source names an XYZ template on the map service and nothing
 else — no token, no header. The token is attached per request by the
@@ -17,6 +18,7 @@ from qgis.core import (
     QgsMapBoxGlStyleConversionContext,
     QgsMapBoxGlStyleConverter,
     QgsPalLayerSettings,
+    QgsRasterLayer,
     QgsTextFormat,
     QgsVectorTileBasicLabeling,
     QgsVectorTileBasicLabelingStyle,
@@ -29,20 +31,33 @@ from qgis.PyQt.QtGui import QColor, QImage
 
 from .. import attribution, config
 from . import style as style_rewrite
-from .current import Current
+from .current import Aerial, Current
 
-NAMES = {"basemap": "Airdress basemap", "boundaries": "Airdress boundaries"}
-MAX_ZOOM = {"basemap": 15, "boundaries": 12}
+NAMES = {
+    "basemap": "Airdress basemap",
+    "boundaries": "Airdress boundaries",
+    "imagery": "Airdress satellite",
+    "aerial": "Airdress aerial",
+}
+MAX_ZOOM = {"basemap": 15, "boundaries": 12, "imagery": 14}
+RASTER = ("imagery", "aerial")
+# Which aerial archive a layer draws, beside its kind.
+AERIAL_PROPERTY = config.PREFIX + "aerial"
+# The layer's own credit, for the kinds whose credit is not a constant.
+CREDIT_PROPERTY = config.PREFIX + "credit"
+# An aerial layer's photo box, `w,s,e,n` in degrees: its credit is named
+# only while the box is in view.
+BOUNDS_PROPERTY = config.PREFIX + "bounds"
 
 GetBytes = Callable[[str], "tuple[int, bytes]"]
 
 
-def source_uri(template: str, kind: str) -> str:
+def source_uri(template: str, kind: str, zmin: int = 0, zmax: int | None = None) -> str:
     uri = QgsDataSourceUri()
     uri.setParam("type", "xyz")
     uri.setParam("url", template)
-    uri.setParam("zmin", "0")
-    uri.setParam("zmax", str(MAX_ZOOM[kind]))
+    uri.setParam("zmin", str(zmin))
+    uri.setParam("zmax", str(MAX_ZOOM[kind] if zmax is None else zmax))
     return bytes(uri.encodedUri()).decode("utf-8")
 
 
@@ -58,13 +73,27 @@ def kind_of(layer) -> str | None:
     return str(value) if value in NAMES else None
 
 
-def _mark(layer: QgsVectorTileLayer, kind: str) -> None:
+def aerial_id_of(layer) -> str | None:
+    value = layer.customProperty(AERIAL_PROPERTY)
+    return str(value) if value else None
+
+
+def credit_of(layer) -> list[str]:
+    """What this layer must credit, one item per source."""
+    kind = kind_of(layer)
+    if kind == "aerial":
+        value = layer.customProperty(CREDIT_PROPERTY)
+        return [str(value)] if value else []
+    return list(attribution.BY_KIND.get(kind, []))
+
+
+def _mark(layer, kind: str, credit_items: list[str] | None = None) -> None:
     layer.setCustomProperty(config.LAYER_PROPERTY, kind)
-    credit = " · ".join(attribution.BY_KIND[kind])
+    credit = " · ".join(credit_items if credit_items is not None else attribution.BY_KIND[kind])
     metadata = QgsLayerMetadata()
     metadata.setRights([credit])
     metadata.setLicenses([config.LICENSES_URL])
-    metadata.setAbstract(f"{NAMES[kind]} from {config.MAPS_ORIGIN}. Credits and licences: {config.LICENSES_URL}")
+    metadata.setAbstract(f"{layer.name()} from {config.MAPS_ORIGIN}. Credits and licences: {config.LICENSES_URL}")
     layer.setMetadata(metadata)
     try:  # QGIS ≥ 3.22: what QGIS Server and layouts read
         layer.serverProperties().setAttribution(credit)
@@ -149,4 +178,28 @@ def boundaries(current: Current) -> QgsVectorTileLayer:
     layer.setLabeling(labeling)
 
     _mark(layer, "boundaries")
+    return layer
+
+
+def imagery(current: Current) -> QgsRasterLayer:
+    """The Satellite mosaic, drawn to its last zoom and enlarged past it."""
+    template = current.template("imagery")
+    layer = QgsRasterLayer(source_uri(template, "imagery"), NAMES["imagery"], "wms")
+    _mark(layer, "imagery")
+    return layer
+
+
+def aerial(entry: Aerial, locale: str = "en") -> QgsRasterLayer:
+    """One aerial archive: only from its first zoom, so a zoomed-out map
+    asks for none of its tiles, and enlarged past its last."""
+    layer = QgsRasterLayer(
+        source_uri(entry.tiles, "aerial", entry.minzoom, entry.maxzoom),
+        f"{NAMES['aerial']} — {entry.place}",
+        "wms",
+    )
+    credit = attribution.aerial(entry, locale)
+    layer.setCustomProperty(AERIAL_PROPERTY, entry.id)
+    layer.setCustomProperty(CREDIT_PROPERTY, credit)
+    layer.setCustomProperty(BOUNDS_PROPERTY, ",".join(str(b) for b in entry.bounds))
+    _mark(layer, "aerial", [credit])
     return layer

@@ -36,7 +36,7 @@ def test_the_browser_root_offers_both_layers_and_adds_on_double_click(wired):
     assert provider.createDataItem("somewhere/else", None) is None
     root = provider.createDataItem("", None)
     children = root.createChildren()
-    assert [c.name() for c in children] == ["Basemap", "Boundaries"]
+    assert [c.name() for c in children] == ["Basemap", "Boundaries", "Satellite", "Aerial photos"]
     assert all(not c.hasDragEnabled() for c in children)
     assert children[1].handleDoubleClick() is True
     assert added == ["boundaries"]

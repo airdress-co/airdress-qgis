@@ -11,6 +11,14 @@ You need an Airdress account that is past the waitlist.
   remote desktop, a locked-down machine), use the code shown instead.
 - **Add basemap / Add boundaries** from the Airdress toolbar button or the
   *Airdress* entry in the Browser panel.
+- **Add satellite** adds the Copernicus Sentinel-2 mosaic for Europe and
+  North America. **Add aerial photos** adds one layer per city with
+  government aerial photos (Munich, Berlin, Hamburg, Vienna and Paris so
+  far), each drawn only from zoom 12 and credited in its provider's words
+  while it is in view. Both are WebP images, which QGIS reads through Qt's
+  image format plugins; where those are missing (QGIS 4 on Debian and
+  Ubuntu needs `qt6-image-formats-plugins`), the plugin says so instead of
+  drawing nothing.
 - **Search** in the locator bar (`Ctrl+K`) with the prefix `air`, e.g.
   `air munich`. One query at a time; there is deliberately no batch
   geocoding.

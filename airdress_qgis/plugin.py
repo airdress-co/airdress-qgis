@@ -15,6 +15,7 @@ import time
 from qgis.core import (
     Qgis,
     QgsApplication,
+    QgsCoordinateTransform,
     QgsFeature,
     QgsField,
     QgsGeometry,
@@ -27,7 +28,7 @@ from qgis.core import (
 )
 from qgis.gui import QgsMapToolEmitPoint, QgsVertexMarker
 from qgis.PyQt.QtCore import QCoreApplication, QThread, QTimer, QUrl
-from qgis.PyQt.QtGui import QColor, QDesktopServices, QFont, QIcon
+from qgis.PyQt.QtGui import QColor, QDesktopServices, QFont, QIcon, QImageReader
 from qgis.PyQt.QtWidgets import QMenu, QToolButton
 
 try:  # Qt6 (QGIS 4) moved QAction to QtGui
@@ -49,6 +50,10 @@ from .search.locator import WGS84, AirdressLocatorFilter, point_in
 from .signin import SignInDialog
 
 LOG_TAG = "Airdress"
+# Bottom to top: where each kind sits among the others in the layer tree.
+# The person's own layers stay above all of them.
+ORDER = ("basemap", "imagery", "aerial", "boundaries")
+AERIAL_GROUP = "Airdress aerial"
 RETRY_SECONDS = 30
 NOTICE_COOLDOWN_SECONDS = 60
 
@@ -94,6 +99,8 @@ class AirdressPlugin:
         menu.addSeparator()
         self._action(menu, "Add basemap", lambda: self.add_layer("basemap"))
         self._action(menu, "Add boundaries", lambda: self.add_layer("boundaries"))
+        self._action(menu, "Add satellite", lambda: self.add_layer("imagery"))
+        self._action(menu, "Add aerial photos", self.add_aerial)
         self.whats_here_action = self._action(menu, "What's here?", self.whats_here)
         self.whats_here_action.setCheckable(True)
         self._action(menu, "Add attribution to layout", self.add_layout_attribution)
@@ -241,11 +248,23 @@ class AirdressPlugin:
             self.log("/current.json names no tile route: the map service is older than this plugin")
             return None
 
+    def can_draw_imagery(self) -> bool:
+        """The imagery is WebP, which QGIS reads only through Qt's image
+        format plugins; without them a layer would add and draw nothing."""
+        if b"webp" in [bytes(f) for f in QImageReader.supportedImageFormats()]:
+            return True
+        self.say("no_webp", Qgis.MessageLevel.Critical)
+        return False
+
     def add_layer(self, kind: str) -> None:
+        if kind in layers.RASTER and not self.can_draw_imagery():
+            return
         if not self.ensure_signed_in():
             return
         current = self.current()
         if current is None or current.template(kind) is None:
+            if current is not None and kind == "imagery":
+                self.say("no_imagery", Qgis.MessageLevel.Info)
             return
         if kind == "basemap":
             status, published = net.get_json(current.style)
@@ -254,17 +273,42 @@ class AirdressPlugin:
                 return
             layer, warnings = layers.basemap(current, published, net.get_bytes)
             self.log(f"style converted with {len(warnings)} warnings")
+        elif kind == "imagery":
+            layer = layers.imagery(current)
         else:
             layer = layers.boundaries(current)
         project = QgsProject.instance()
         project.addMapLayer(layer, False)
         root = project.layerTreeRoot()
-        if kind == "basemap":
-            root.addLayer(layer)  # at the bottom, under the person's data
-        else:
-            basemap_nodes = [n for n in root.findLayers() if layers.kind_of(n.layer()) == "basemap"]
-            index = root.children().index(basemap_nodes[0]) if basemap_nodes else len(root.children())
-            root.insertLayer(index, layer)
+        root.insertLayer(self._slot(kind), layer)
+
+    def add_aerial(self) -> None:
+        """Every aerial archive, one layer each, in one group: each draws only
+        where it has photos and only from its first zoom."""
+        if not self.can_draw_imagery() or not self.ensure_signed_in():
+            return
+        current = self.current()
+        if current is None:
+            return
+        if not current.aerial:
+            self.say("no_aerial", Qgis.MessageLevel.Info)
+            return
+        project = QgsProject.instance()
+        root = project.layerTreeRoot()
+        group = root.insertGroup(self._slot("aerial"), AERIAL_GROUP)
+        group.setCustomProperty(config.LAYER_PROPERTY, "aerial")
+        for entry in current.aerial:
+            layer = layers.aerial(entry, self.locale)
+            project.addMapLayer(layer, False)
+            group.addLayer(layer)
+
+    def _slot(self, kind: str) -> int:
+        """Where a new layer of `kind` goes in the root: just above the top
+        Airdress node of a kind below it, else at the bottom."""
+        root = QgsProject.instance().layerTreeRoot()
+        below = ORDER[: ORDER.index(kind)]
+        indices = [i for i, node in enumerate(root.children()) if _kind_of_node(node) in below]
+        return min(indices) if indices else len(root.children())
 
     def on_project_read(self, *args) -> None:
         found = airdress_layers(QgsProject.instance())
@@ -340,8 +384,6 @@ class AirdressPlugin:
     def _reverse(self, point, button) -> None:
         if not self.ensure_signed_in():
             return
-        from qgis.core import QgsCoordinateTransform
-
         crs = self.iface.mapCanvas().mapSettings().destinationCrs()
         wgs = QgsCoordinateTransform(crs, WGS84, QgsProject.instance()).transform(point)
         status, body = self.call_json(config.MAPS_ORIGIN + "/reverse", geocode.reverse_body(wgs.x(), wgs.y()))
@@ -363,8 +405,31 @@ class AirdressPlugin:
                 kinds.append(kind)
         return kinds
 
+    def visible_aerial_credits(self) -> list[str]:
+        """Each visible aerial layer's credit, while its photos are in view
+        (as the page names an aerial source only while it is on screen)."""
+        canvas = self.iface.mapCanvas()
+        try:
+            view = QgsCoordinateTransform(
+                canvas.mapSettings().destinationCrs(), WGS84, QgsProject.instance()
+            ).transformBoundingBox(canvas.extent())
+        except Exception:  # noqa: BLE001 - an untransformable view names every source
+            view = None
+        credits = []
+        for node in QgsProject.instance().layerTreeRoot().findLayers():
+            layer = node.layer()
+            if layer is None or layers.kind_of(layer) != "aerial" or not node.isVisible():
+                continue
+            if view is not None and not _meets(layer.customProperty(layers.BOUNDS_PROPERTY), view):
+                continue
+            credits.extend(layers.credit_of(layer))
+        return credits
+
+    def attribution_text(self, kinds: list[str] | None = None) -> str:
+        return attribution.line(kinds if kinds is not None else self.visible_kinds(), self.visible_aerial_credits())
+
     def _draw_attribution(self, painter) -> None:
-        text = attribution.line(self.visible_kinds())
+        text = self.attribution_text()
         if not text:
             return
         font = QFont()
@@ -392,7 +457,7 @@ class AirdressPlugin:
         layout = designers[-1].layout()
         kinds = self.visible_kinds() or ["basemap"]
         label = QgsLayoutItemLabel(layout)
-        label.setText(attribution.line(kinds))
+        label.setText(self.attribution_text(kinds))
         label.setId("Airdress attribution")
         font = QFont()
         font.setPointSizeF(6)
@@ -405,3 +470,22 @@ class AirdressPlugin:
             label.setFont(font)
         label.adjustSizeToText()
         layout.addLayoutItem(label)
+
+
+def _kind_of_node(node) -> str | None:
+    """A layer node's Airdress kind, or a group's (the aerial group)."""
+    layer = getattr(node, "layer", None)
+    if callable(layer) and layer() is not None:
+        return layers.kind_of(layer())
+    value = node.customProperty(config.LAYER_PROPERTY)
+    return str(value) if value in ORDER else None
+
+
+def _meets(bounds, view) -> bool:
+    """Whether `w,s,e,n` (as stored on the layer) meets the view; a layer
+    with no bounds stored always does."""
+    try:
+        west, south, east, north = (float(b) for b in str(bounds).split(","))
+    except ValueError:
+        return True
+    return not (east < view.xMinimum() or west > view.xMaximum() or north < view.yMinimum() or south > view.yMaximum())
