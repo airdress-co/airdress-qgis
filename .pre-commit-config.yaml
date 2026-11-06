@@ -38,6 +38,13 @@ repos:
       - id: gitleaks
   - repo: local
     hooks:
+      - id: check-doc-numbers
+        name: document numbers stay out of code
+        entry: scripts/check-doc-numbers.sh
+        language: system
+        pass_filenames: false
+        always_run: true
+
       - id: qt-imports
         name: Qt only through qgis.PyQt (one source for Qt5 and Qt6)
         entry: python3 scripts/check-qt-imports.py
